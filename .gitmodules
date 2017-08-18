@@ -1,0 +1,3 @@
+[submodule "flask_video_streaming"]
+	path = flask_video_streaming
+	url = http://danielperezr88@github.com/danielperezr88/flask-video-streaming.git
