@@ -2,3 +2,7 @@
 
 *__pycache__*
 *.pyc
+
+# IntelliJ related files
+
+*.idea*
