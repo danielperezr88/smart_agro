@@ -167,7 +167,7 @@ def option_read():
     if result is not None:
         option = result['o']
         print(result)
-        if (option > 10000 and option <= 29999) or (option < 30000 and option <= 49999):
+        if (option > 10000 and option <= 29999) or (option > 30000 and option <= 49999):
             pass
         else:
             blynk.virtual_write(dict(tuple([v, k]) for k, v in vpin_option_dict.items())[str(option)], result['v'])
