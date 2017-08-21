@@ -8,7 +8,7 @@ from serial import Serial
 blynk = Blynk('62e3b56640974018aa5779f87cdd51cb')
 ser = Serial('/dev/serial0', 115200, timeout=1)
 json_raw = ''
-sensor_id = 1
+sensor_id = 0
 timestamp = ticks_ms()
 
 vpin_option_dict = {
@@ -43,8 +43,6 @@ def maybe_retrieve_json():
     except BlockingIOError as _:
         pass
 
-    print(json_raw)
-
     while json_raw[0] != '{' if len(json_raw) > 0 else False:
         json_raw = json_raw[1:]
 
@@ -62,7 +60,6 @@ def maybe_retrieve_json():
     result = None
 
     try:
-        print(json_raw[:close_idx + 1])
         result = json.loads(json_raw[:close_idx + 1])
     except ValueError as e:
         print('Error: ' + str(e))
@@ -132,6 +129,7 @@ blynk.add_virtual_pin(7, read=v7_read)
 
 # Fan Programme (30000 < option <= 50000)
 def v8_write(param):
+    print(param)
     if param[0] == 1:
         ser.write(bytes('49999', encoding='utf-8'))
     else:
@@ -147,6 +145,7 @@ blynk.add_virtual_pin(8, write=v8_write, read=v8_read)
 
 # Pump Programme (10000 < option <= 30000)
 def v9_write(param):
+    print(param)
     if param[0] == 1:
         ser.write(bytes('29999', encoding='utf-8'))
     else:
@@ -167,12 +166,15 @@ def option_read():
 
     if result is not None:
         print(result)
-        blynk.virtual_write(dict(tuple([v, k]) for k, v in vpin_option_dict.items())[str(result['o'])], result['v'])
+        if (option > 10000 and option <= 29999) or (option < 30000 and option <= 49999):
+            pass
+        else:
+            blynk.virtual_write(dict(tuple([v, k]) for k, v in vpin_option_dict.items())[str(option)], result['v'])
 
     if ticks_ms() - timestamp > 5000:
         timestamp += 5000
         globals()['v' + str(sensor_id) + '_read']()
-        sensor_id = (sensor_id % 9) + 1
+        sensor_id = (sensor_id + 1) % 10
 
 blynk.set_user_task(option_read, 100)
 
