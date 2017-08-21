@@ -167,8 +167,10 @@ def option_read():
         print(result)
         if (option > 10000 and option <= 29999) or (option > 30000 and option <= 49999):
             pass
-        else:
+        elif option in [int(v) for v in vpin_option_dict.values()]:
             blynk.virtual_write(dict(tuple([v, k]) for k, v in vpin_option_dict.items())[str(option)], result['v'])
+        else:
+            print('Error: unknown option #%d' % (option,))
 
     if ticks_ms() - timestamp > 5000:
         timestamp += 5000
