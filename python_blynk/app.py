@@ -129,7 +129,7 @@ blynk.add_virtual_pin(7, read=v7_read)
 
 # Fan Programme (30000 < option <= 50000)
 def v8_write(param):
-    if param == 1:
+    if int(param) == 1:
         ser.write(bytes('49999', encoding='utf-8'))
     else:
         ser.write(bytes('30001', encoding='utf-8'))
@@ -144,7 +144,7 @@ blynk.add_virtual_pin(8, write=v8_write, read=v8_read)
 
 # Pump Programme (10000 < option <= 30000)
 def v9_write(param):
-    if param == 1:
+    if int(param) == 1:
         ser.write(bytes('29999', encoding='utf-8'))
     else:
         ser.write(bytes('10001', encoding='utf-8'))
