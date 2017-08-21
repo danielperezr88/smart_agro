@@ -163,6 +163,7 @@ def option_read():
     global sensor_id, timestamp
 
     result = maybe_retrieve_json()
+    option = result['o']
 
     if result is not None:
         print(result)
