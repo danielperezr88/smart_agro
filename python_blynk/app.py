@@ -163,9 +163,9 @@ def option_read():
     global sensor_id, timestamp
 
     result = maybe_retrieve_json()
-    option = result['o']
 
     if result is not None:
+        option = result['o']
         print(result)
         if (option > 10000 and option <= 29999) or (option < 30000 and option <= 49999):
             pass
