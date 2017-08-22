@@ -157,7 +157,8 @@ class WDT:
         pyblog ('[WDT] Init with %d timeout' % self.timeout)
 
     def feed(self):
-        pyblog ('[WDT] Watchdog kicked just now')
+        #pyblog ('[WDT] Watchdog kicked just now')
+        pass
 
 
 """

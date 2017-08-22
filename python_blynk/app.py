@@ -3,10 +3,11 @@ from BlynkLib import Blynk
 from time import sleep, ticks_ms
 import json
 
-from serial import Serial
+import asyncio
+import serial_asyncio
 
 blynk = Blynk('62e3b56640974018aa5779f87cdd51cb')
-ser = Serial('/dev/serial0', 115200, timeout=1)
+ser = None
 json_raw = ''
 sensor_id = 0
 timestamp = ticks_ms()
@@ -24,54 +25,7 @@ vpin_option_dict = {
     9: '30000'
 }
 
-
-def wait_for_json():
-
-    json_ = None
-
-    while json_ is None:
-        json_ = maybe_retrieve_json()
-
-    return json_
-
-
-def maybe_retrieve_json():
-    global json_raw
-
-    try:
-        json_raw += ser.readline().decode('utf-8').strip('\n').strip('\r')
-    except BlockingIOError as _:
-        pass
-
-    while json_raw[0] != '{' if len(json_raw) > 0 else False:
-        json_raw = json_raw[1:]
-
-    if len(json_raw) == 0:
-        return None
-
-    close_idx = json_raw.find('}')
-    while close_idx == -1:
-        try:
-            json_raw += ser.readline().decode('utf-8').strip('\n').strip('\r')
-            close_idx = json_raw.find('}')
-        except BlockingIOError as _:
-            pass
-
-    result = None
-
-    try:
-        result = json.loads(json_raw[:close_idx + 1])
-    except ValueError as e:
-        print('Error: ' + str(e))
-        return result
-    finally:
-        if result is not None:
-            json_raw = json_raw[close_idx + 1:]
-
-    return result
-
-
-# Temperature Inside (option 1)
+#Temperature Inside (option 1)
 def v0_read():
     ser.write(bytes(vpin_option_dict[0], encoding='utf-8'))
 
@@ -133,7 +87,6 @@ def v8_write(param):
         ser.write(bytes('49999', encoding='utf-8'))
     else:
         ser.write(bytes('30001', encoding='utf-8'))
-        blynk.virtual_write(8, 0)
 
 
 def v8_read():
@@ -143,12 +96,11 @@ blynk.add_virtual_pin(8, write=v8_write, read=v8_read)
 
 
 # Pump Programme (10000 < option <= 30000)
-def v9_write(param):
+def v9_write(param):    
     if int(param) == 1:
         ser.write(bytes('29999', encoding='utf-8'))
     else:
         ser.write(bytes('10001', encoding='utf-8'))
-        blynk.virtual_write(9, 0)
 
 
 def v9_read():
@@ -157,27 +109,97 @@ def v9_read():
 blynk.add_virtual_pin(9, write=v9_write, read=v9_read)
 
 
-def option_read():
-    global sensor_id, timestamp
+class Output(asyncio.Protocol):
 
-    result = maybe_retrieve_json()
+    def __init__(self):
+        super().__init__()
+        self.transport = None
 
-    if result is not None:
-        option = result['o']
-        print(result)
-        if (option > 10000 and option <= 29999) or (option > 30000 and option <= 49999):
-            pass
-        elif option in [int(v) for v in vpin_option_dict.values()]:
-            blynk.virtual_write(dict(tuple([v, k]) for k, v in vpin_option_dict.items())[str(option)], result['v'])
-        else:
-            print('Error: unknown option #%d' % (option,))
+    def connection_made(self, transport):
+        global ser
+        self.transport = transport
+        print('port opened', transport)
+        transport.serial.rts = False
+        ser = transport
+        blynk.set_user_task(self.option_read, 100)
 
-    if ticks_ms() - timestamp > 5000:
-        timestamp += 5000
-        globals()['v' + str(sensor_id) + '_read']()
-        sensor_id = (sensor_id + 1) % 10
+    def option_read(self):
+        global sensor_id, timestamp
+        if ticks_ms() - timestamp > 5000:
+            timestamp += 5000
+            globals()['v' + str(sensor_id) + '_read']()
+            sensor_id = (sensor_id + 1) % 10
 
-blynk.set_user_task(option_read, 100)
+    def data_received(self, data):
+
+        global sensor_id, timestamp, json_raw
+
+        json_raw += data.decode('utf-8').strip('\n').strip('\r')
+
+        while json_raw[0] != '{' if len(json_raw) > 0 else False:
+            json_raw = json_raw[1:]
+
+        if len(json_raw) == 0:
+            return
+
+        close_idx = json_raw.find('}')
+        if close_idx == -1:
+            return
+
+        result = None
+
+        try:
+            result = json.loads(json_raw[:close_idx + 1])
+        except ValueError as e:
+            print('Error: ' + str(e), flush=True)
+            return
+
+        if result is not None:
+
+            json_raw = json_raw[close_idx + 1:]
+
+            option = result['o']
+            print(result, flush=True)
+            if (option > 10000 and option <= 29999) or (option > 30000 and option <= 49999):
+                pass
+            elif option in [int(v) for v in vpin_option_dict.values()]:
+                blynk.virtual_write(dict(tuple([v, k]) for k, v in vpin_option_dict.items())[str(option)], result['v'])
+            else:
+                print('Error: unknown option #%d' % (option,))
+
+    def connection_lost(self, exc):
+        print('port closed')
+        self.transport.loop.stop()
+
+    def pause_writing(self):
+        print('pause writing')
+        print(self.transport.get_write_buffer_size())
+        print('resume writing')
+
+    def write(self, msg):
+        self.transport.write(msg)
+
+    def close(self):
+        self.transport.close()
+
+
+@asyncio.coroutine
+def blynk_runner(loop):
+    yield from loop.run_in_executor(None, blynk.run)
+
 
 if __name__ == '__main__':
-    blynk.run()
+
+    loop = asyncio.get_event_loop()
+
+    coor = serial_asyncio.create_serial_connection(loop, Output, '/dev/serial0', baudrate=115200)
+
+    loop.run_until_complete(
+        asyncio.wait([
+            coor,
+            blynk_runner(loop)
+        ])
+    )
+
+    loop.run_forever()
+    loop.close()
