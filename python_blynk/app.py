@@ -6,6 +6,12 @@ import json
 import asyncio
 import serial_asyncio
 
+from flask import Flask, render_template, Response
+from camera_pi import Camera
+
+
+app = Flask(__name__)
+
 blynk = Blynk('62e3b56640974018aa5779f87cdd51cb')
 ser = None
 json_raw = ''
@@ -183,9 +189,39 @@ class Output(asyncio.Protocol):
         self.transport.close()
 
 
+@app.route('/')
+def index():
+    """Video streaming home page."""
+    return render_template('index.html')
+
+
+def gen(camera):
+    """Video streaming generator function."""
+    while True:
+        frame = camera.get_frame()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+
+@app.route('/video_feed')
+def video_feed():
+    """Video streaming route. Put this in the src attribute of an img tag."""
+    return Response(gen(Camera()),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+def flask_run():
+    app.run(host='0.0.0.0', threaded=True, port=5001)
+
+
 @asyncio.coroutine
 def blynk_runner(loop):
     yield from loop.run_in_executor(None, blynk.run)
+
+
+@asyncio.coroutine
+def flask_runner(loop):
+    yield from loop.run_in_executor(None, flask_run)
 
 
 if __name__ == '__main__':
@@ -197,7 +233,8 @@ if __name__ == '__main__':
     loop.run_until_complete(
         asyncio.wait([
             coor,
-            blynk_runner(loop)
+            blynk_runner(loop),
+            flask_runner(loop)
         ])
     )
 
