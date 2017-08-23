@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from BlynkLib import Blynk
-from time import sleep, ticks_ms
+from time import ticks_ms
 import json
 
 import asyncio
@@ -31,7 +31,8 @@ vpin_option_dict = {
     9: '30000'
 }
 
-#Temperature Inside (option 1)
+
+# Temperature Inside (option 1)
 def v0_read():
     ser.write(bytes(vpin_option_dict[0], encoding='utf-8'))
 
@@ -129,7 +130,8 @@ class Output(asyncio.Protocol):
         ser = transport
         blynk.set_user_task(self.option_read, 100)
 
-    def option_read(self):
+    @staticmethod
+    def option_read():
         global sensor_id, timestamp
         if ticks_ms() - timestamp > 5000:
             timestamp += 5000
@@ -152,8 +154,6 @@ class Output(asyncio.Protocol):
         if close_idx == -1:
             return
 
-        result = None
-
         try:
             result = json.loads(json_raw[:close_idx + 1])
         except ValueError as e:
@@ -166,10 +166,10 @@ class Output(asyncio.Protocol):
 
             option = result['o']
             print(result, flush=True)
-            if (option > 10000 and option <= 29999) or (option > 30000 and option <= 49999):
+            if 10000 < option <= 29999 or 30000 < option <= 49999:
                 pass
             elif option in [int(v) for v in vpin_option_dict.values()]:
-                blynk.virtual_write(dict(tuple([v, k]) for k, v in vpin_option_dict.items())[str(option)], result['v'])
+                blynk.virtual_write(dict((v, k) for k, v in vpin_option_dict.items())[str(option)], result['v'])
             else:
                 print('Error: unknown option #%d' % (option,))
 
@@ -215,13 +215,13 @@ def flask_run():
 
 
 @asyncio.coroutine
-def blynk_runner(loop):
-    yield from loop.run_in_executor(None, blynk.run)
+def blynk_runner(l):
+    yield from l.run_in_executor(None, blynk.run)
 
 
 @asyncio.coroutine
-def flask_runner(loop):
-    yield from loop.run_in_executor(None, flask_run)
+def flask_runner(l):
+    yield from l.run_in_executor(None, flask_run)
 
 
 if __name__ == '__main__':
