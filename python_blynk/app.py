@@ -7,7 +7,7 @@ import asyncio
 import serial_asyncio
 
 from flask import Flask, render_template, Response
-from camera_pi import Camera
+from camera_pi_proc import Camera
 
 
 app = Flask(__name__)
