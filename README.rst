@@ -9,9 +9,9 @@ Main features are the following:
 - Self-hosted Flask webapp inside the Raspberry Pi, suitable for system-specific configurations.
 - Capacity for autonomously running and training Machine Learning models, to control the environment variables.
 
-**SCOPE:  [_Proof of Concept_]**
+__SCOPE:  [*Proof of Concept*]__
 
-**STATUS: [_Production Ready_]**
+__STATUS: [*Production Ready*]__
 
 This project is composed of 2 parts:
 
