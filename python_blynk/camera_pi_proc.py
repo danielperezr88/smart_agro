@@ -19,7 +19,6 @@ class Camera(BaseCamera):
             # let camera warm up
             time.sleep(2)
 
-            #stream = io.BytesIO()
             for foo in camera.capture_continuous(highResCap, 'rgb',
                                                  use_video_port=True):
                 # return current frame
@@ -27,7 +26,7 @@ class Camera(BaseCamera):
                 highResCap.flush()
                 arr = highResCap.array
                 arr = r2h(arr)
-                arr[:,:,:][(107./256 < arr[:,:,0]) & (arr[:,:,0] <= 214./256)] = 0
+                arr[:, :, :][0.4 < arr[:, :, 0]] = 0
                 arr = h2r(arr)
                 res = io.BytesIO()
                 Image.fromarray(arr.astype('uint8')).save(res, 'jpeg')
