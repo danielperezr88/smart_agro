@@ -9,13 +9,14 @@ Main features are the following:
 - Self-hosted Flask webapp inside the Raspberry Pi, suitable for system-specific configurations.
 - Capacity for autonomously running and training Machine Learning models, to control the environment variables.
 
-SCOPE:  [*Proof of Concept*]
-STATUS: [*Production Ready*]
+SCOPE:  **[*Proof of Concept*]**
+
+STATUS: **[*Production Ready*]**
 
 This project is composed of 2 parts:
 
-- *python_blynk*: Handles Serial Connection with Arduino board and Over-Internet API with Blynk servers, in addition to Raspberry Pi camera, which image preprocesses with OpenCV. Everything is executed asynchronously, making use of AsyncIO python library, in order to avoid processes blocking each other. You just have to run ``app.py`` to start.
-- *arduino*: Serves as an interface between sensors/actuators and the serial port. Except for the sensor drivers, data processing is minimal.
+- **python_blynk**: Handles Serial Connection with Arduino board and Over-Internet API with Blynk servers, in addition to Raspberry Pi camera, which image preprocesses with OpenCV. Everything is executed asynchronously, making use of AsyncIO python library, in order to avoid processes blocking each other. You just have to run ``app.py`` to start.
+- **arduino**: Serves as an interface between sensors/actuators and the serial port. Except for the sensor drivers, data processing is minimal.
 
 Additionally, this project contains the submodule ``flask_video_streaming``, which features a project for camera and streaming tests. This project is not necessary for the deployment setup, but in case you wanted to clone it too with the rest of the contents, remember using the *--recursive* option.
 
