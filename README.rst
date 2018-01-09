@@ -3,6 +3,7 @@ Arduino + Blynk + Flask smart-agro (RPi + Arduino)
 Functional Prototype code for Smart-Agro applications.
 
 Main features are the following:
+
 - Real-time sensor/actuator handling via mobile app (Blynk).
 - Image/data preprocessing over python with a Raspberry Pi (with the help of scientific and image processing software, such as scikit-learn and OpenCV).
 - Self-hosted Flask webapp inside the Raspberry Pi, suitable for system-specific configurations.
@@ -12,6 +13,7 @@ SCOPE:  [*Proof of Concept*]
 STATUS: [*Production Ready*]
 
 This project is composed of 2 parts:
+
 - *python_blynk*: Handles Serial Connection with Arduino board and Over-Internet API with Blynk servers, in addition to Raspberry Pi camera, which image preprocesses with OpenCV. Everything is executed asynchronously, making use of AsyncIO python library, in order to avoid processes blocking each other. You just have to run ``app.py`` to start.
 - *arduino*: Serves as an interface between sensors/actuators and the serial port. Except for the sensor drivers, data processing is minimal.
 
@@ -21,6 +23,7 @@ Notes:
 ------
 Given its multi-device nature, this project lacks a containerized deployment method. To put it to work you'll have to wire everything up correctly, program a suitable Arduino board with the Arduino code provided, and prepare a Raspberry Pi with python 3 and all of the required python modules.
 About the requirements, although they haven't been extensively tested, here we'll provide a tentative list:
+
 - click==6.7
 - Flask==0.12.2
 - itsdangerous==0.24
